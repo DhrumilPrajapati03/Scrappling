@@ -526,8 +526,11 @@ def get_mock_scrape(category, limit):
 
 # --- Main App ---
 def main():
-    # Load API key from environment variable (.env file)
-    api_key = os.environ.get("OUTSCRAPER_API_KEY", "")
+    # Load API key: try Streamlit secrets first (for cloud deployment), then .env
+    try:
+        api_key = st.secrets["OUTSCRAPER_API_KEY"]
+    except (KeyError, FileNotFoundError):
+        api_key = os.environ.get("OUTSCRAPER_API_KEY", "")
     
     # Custom CSS for modern dashboard style
     st.markdown("""
@@ -587,14 +590,17 @@ def main():
     # --- Sidebar Configuration ---
     st.sidebar.title("Configuration ⚙️")
     
-    # Display API key status (loaded from .env)
+    # Display API key status
     if api_key:
         masked_key = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "****"
-        st.sidebar.success(f"🔑 API Key loaded from `.env`")
+        st.sidebar.success(f"🔑 API Key loaded successfully")
         st.sidebar.caption(f"Key: `{masked_key}`")
     else:
-        st.sidebar.warning("⚠️ No `OUTSCRAPER_API_KEY` found in `.env` file.")
-        st.sidebar.caption("Add your key to the `.env` file:\n`OUTSCRAPER_API_KEY=your_key_here`")
+        st.sidebar.warning("⚠️ No `OUTSCRAPER_API_KEY` found.")
+        st.sidebar.caption(
+            "**Local:** Add to `.env` file:\n`OUTSCRAPER_API_KEY=your_key_here`\n\n"
+            "**Streamlit Cloud:** Add to app Settings → Secrets:\n`OUTSCRAPER_API_KEY = \"your_key_here\"`"
+        )
         
     # Demo Mode switch
     demo_mode = st.sidebar.toggle("Run in Demo Mode", value=(not api_key))
